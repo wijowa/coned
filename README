@@ -1,0 +1,27 @@
+coned.py is a module for accessing Consolidated Edison of New York 
+(coned.com)'s energy usage and billing history data.
+
+ConedBill is a wrapper class for the energy usage history coming 
+from ConEd's account management app.  It uses a simple POST request 
+to retrieve the billing history page for a ConEd account number, 
+parses the data, and formats it into an object.
+
+The ConedBill instance can export the data as a Python dictionary,
+raw CSV rows, or a JSON string representing the Python dictionary.
+
+To use:
+	cb = ConedBill('##########')
+	cb.json
+	cb.csv
+	cb.dict
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
