@@ -85,10 +85,19 @@ class ConedBill(object):
                 ed = r[1].split('/')
                 startdate = datetime.date(month=int(sd[0]),day=int(sd[1]),year=int(sd[2]))
                 enddate = datetime.date(month=int(ed[0]),day=int(ed[1]),year=int(ed[2]))
-                kwh=round(float(''.join(r[2].split(','))))
-                days=(enddate-startdate).days
+                days=(enddate-startdate).days             
+                try:
+                    kwh=round(float(''.join(r[2].split(','))))
+                    daily=round(kwh/float(days))
+                    power=round(kwh/float(days*24.0)*1000.0)
+                except ValueError:
+                    #data not available in this interval
+                    kwh=None
+                    daily=None
+                    power=None
+
                 d['History'].append({'StartDate':r[0],'EndDate':r[1],'Duration':days,'kWh':kwh,'USD':r[7],
-                                     'Daily':round(kwh/float(days)),'Power':round(kwh/float(days*24.0)*1000.0)})
+                                     'Daily':daily,'Power':power})
                 
             except IndexError:
                 pass
