@@ -15,6 +15,7 @@ ConedBill is a wrapper class that pulls account energy usage history from an acc
     
 @todo: 
     Provide an ESPI wrapper to export in ESPI standard XML format directly
+        Currently this functionality is provided through django templating on Econofy
 
 @copyright: William Wagner / Econofy 2012
 @author: William Wagner
@@ -30,7 +31,6 @@ import datetime
 import time
 import json
 import uuid
-from xml.dom.minidom import Document
 
 
 class ConedBill(object):
@@ -55,7 +55,7 @@ class ConedBill(object):
     
     @property
     def private_account(self):
-        return 'XXXXX%s'%self.account[-10:0]
+        return self.account
 
     def __init__(self,account):
         self.account=account
@@ -71,12 +71,6 @@ class ConedBill(object):
         response = urllib2.urlopen(req)
         r = response.read().split('CONTENT FIELD', 1)[1].split('END CONTENT',1)[0]
 
-#            <input TYPE="HIDDEN" NAME="SOURCE" VALUE="MSC">
-#            <input TYPE="HIDDEN" NAME="LOADZONE", VALUE="J">
-#            <input TYPE="HIDDEN" NAME="SRVCLASS", VALUE="001,">
-#            <input TYPE="HIDDEN" NAME="EPRES", VALUE="100">
-#            <input TYPE="HIDDEN" NAME="FROMDATE">
-#            <input TYPE="HIDDEN" NAME="TODATE">
         return r
     
     def _read_msc(self):
@@ -89,9 +83,7 @@ class ConedBill(object):
         r = response.read().split('CONTENT FIELD', 1)[1].split('END CONTENT',1)[0]
         
         self.msc_values={'ACCT':values['ACCT'],'GOOD':0,'SOURCE':'MSC','LOADZONE':'J','SRVCLASS':'001','EPRES':'100'}
-        #print r.split('NAME="SOURCE" VALUE="',1)[1].split('">',1)[0]
 
-        #print r.split('NAME="LOADZONE" VALUE="',1)[1].split('">',1)[0]
         self.msc_values['SOURCE']=r.split('NAME="SOURCE" VALUE="',1)[1].split('">',1)[0]
         self.msc_values['LOADZONE']=r.split('NAME="LOADZONE", VALUE="',1)[1].split('">',1)[0]
         self.msc_values['SRVCLASS']=r.split('NAME="SRVCLASS", VALUE="',1)[1].split('">',1)[0]
@@ -147,7 +139,9 @@ class ConedBill(object):
         eb = self
         if(eb.d == None):
             d={'Account':eb.account,'Address':eb.address,'Type':eb.type,'History':[],'Start':0,'Duration':0}
-            for r in eb.rows:
+            rrows = eb.rows
+            rrows.reverse()
+            for r in rrows:
                 try:
                     sd = r[0].split('/')
                     ed = r[1].split('/')
@@ -160,7 +154,7 @@ class ConedBill(object):
                     supply = round(float(eb._get_supply_charge(r[0],r[1]))/100.0,4)
                     
                     try:
-                        kwh=round(float(''.join(r[2].split(','))))
+                        kwh=int(round(float(''.join(r[2].split(',')))))
                         daily=round(kwh/float(days))
                         power=round(kwh/float(days*24.0)*1000.0)
     
@@ -174,17 +168,17 @@ class ConedBill(object):
                         delivery = None
                         total_bill=None
                     
-                    if (d['StartSeconds']==0):
-                        d['StartSeconds']=start
+                    if (d['Start']==0):
+                        d['Start']=start
                         
-                    d['TotalDurationSeconds']+=seconds
+                    d['Duration']+=seconds
                     
                     d['History'].append({'StartDate':r[0],'EndDate':r[1],'Start':start,'Duration':seconds,'Usage':kwh,'DurationDays':days,
                                          'Daily':daily,'Power':power,'SupplyCharge':supply,'DeliveryCharge':delivery,'TotalBill':total_bill})
                     
                 except IndexError:
                     pass
-                
+
             eb.d=d
             return d
         else:
